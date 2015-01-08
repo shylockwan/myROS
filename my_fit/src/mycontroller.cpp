@@ -18,84 +18,16 @@ static geometry_msgs::Twist  twist_msg;
    
      
       ////第二种情况；角度ok，距离越界
-    if(d>30&&abs(t)<0.1)
-    {
-   // ROS_INFO(" 1");
-     twist_msg.angular.x=0;
-     twist_msg.angular.y=0;
-     twist_msg.angular.z=0.1;
-     twist_msg.linear.x=0.1;
+    int tempd=int(d/30);
+    int tempt=int(t*10);
+		     // ROS_INFO("tempd  :  %d  ,tempt  :  %d",tempd,tempt);
+    float w=float(tempd)/10+float(tempt)/20;
+    twist_msg.angular.x=0.1;
+    twist_msg.angular.y=0;
+    twist_msg.angular.z=0;
+     twist_msg.linear.x=0;
      twist_msg.linear.y=0;
-     twist_msg.linear.z=0;
-    	
-    }
-    if(d<-30&&abs(t)<0.1)
-       {
-      // ROS_INFO(" 2");
-          twist_msg.angular.x=0;
-   	  twist_msg.angular.y=0;
-   	  twist_msg.angular.z=-0.1;
-   	  twist_msg.linear.x=0.1;
-    	  twist_msg.linear.y=0;
-   	  twist_msg.linear.z=0;
-       }
-    ////第三种情况；距离ok，角度越界
-    if(abs(d)<30&&t>0.1)
-       {
-    //   ROS_INFO(" 3");
-       twist_msg.angular.x=0.0;
-   	  twist_msg.angular.y=0.0;
-   	  twist_msg.angular.z=-0.1;
-   	  twist_msg.linear.x=0.0;
-    	  twist_msg.linear.y=0.0;
-   	  twist_msg.linear.z=0.0;
-       	
-       }
-    if(abs(d)<30&&t<-0.1)
-       {
-       //ROS_INFO(" 4");
-        twist_msg.angular.x=0.0;
-   	  twist_msg.angular.y=0.0;
-   	  twist_msg.angular.z=0.1;
-   	  twist_msg.linear.x=0.0;
-    	  twist_msg.linear.y=0.0;
-   	  twist_msg.linear.z=0.0;
-       	
-       }
-    ////第四种情况；距离和角度均不符；
-    if((d<-30&&t<-0.1)||(d>30&&t>0.1)||(abs(d)<30&&abs(t)<0.1))
-    {
-   // ROS_INFO(" 5");
-     twist_msg.angular.x=0.0;
-   	  twist_msg.angular.y=0.0;
-   	  twist_msg.angular.z=0.0;
-   	  twist_msg.linear.x=0.1;
-    	  twist_msg.linear.y=0.0;
-   	  twist_msg.linear.z=0.0;
-    	
-    }
-    if((d<-30&&t>0.1))
-        {
-    //    ROS_INFO(" 6");
-         twist_msg.angular.x=0.0;
-   	  twist_msg.angular.y=0.0;
-   	  twist_msg.angular.z=-0.1;
-   	  twist_msg.linear.x=0.0;
-    	  twist_msg.linear.y=0.0;
-   	  twist_msg.linear.z=0.0;
-        	
-        }
-    if(d>30&&t<-0.1)
-        {
-      //  ROS_INFO(" 7");
-        twist_msg.angular.x=0.0;
-   	  twist_msg.angular.y=0.0;
-   	  twist_msg.angular.z=0.1;
-   	  twist_msg.linear.x=0.0;
-    	  twist_msg.linear.y=0.0;
-   	  twist_msg.linear.z=0.0;
-      
-        }
+     twist_msg.linear.z=w;
   ROS_INFO("linear :%f , angular: %f",twist_msg.linear.x,twist_msg.angular.z);
 
 }

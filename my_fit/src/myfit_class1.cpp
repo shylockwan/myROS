@@ -7,7 +7,7 @@
 #include "my_fit/control_param.h"
 
 static const std::string OPENCV_WINDOW = "Image window";
-static cv::VideoCapture  cap("1.MOV");
+static cv::VideoCapture  cap("out.avi");
 class myfit
 {
 public:
@@ -40,8 +40,7 @@ public:
              cv::Mat src;
              cap>>src;
 		     // processing on the video stream
-		     int r=src.rows;
-		     int c=src.cols;
+		     
 		     
 		     cv::Mat mask,edge;
 
@@ -49,25 +48,29 @@ public:
 		     cv::morphologyEx(mask,mask,cv::MORPH_OPEN,kernel_,cv::Point(-1,-1),1);
 		     cv::morphologyEx(mask,mask,cv::MORPH_CLOSE,kernel_,cv::Point(-1,-1),3);
 		     cv::imshow("mask", mask);
-		     cv::threshold(mask,mask,0,1,cv::THRESH_BINARY);
-		     edge.create(r,c,mask.type());
-		     this->thinImage(mask,edge,100);
-		  //   cv::imshow("edge", edge);
-		     
+		     cv::cvtColor(mask,edge,CV_GRAY2BGR);
+		     int r=edge.rows;
+		     int c=edge.cols;
 		     ptset_.clear();
-		     this->GetPointset(edge,ptset_);
+		     this->GetPointset(mask,ptset_);
 		     this->LeastsquareFit(ptset_,paramA_);
+		     cv::rectangle(edge,cv::Point(c/2-10,r/2-10), cv::Point(c/2+10,r/2+10),cv::Scalar(0,255,0),5);
 		     this->DrawLine(edge,paramA_,ptset_[0],ptset_[ptset_.size()-1]);
 		     this->GetLocation(paramA_,&edge);
 		     // Update GUI Window
 		     cv::imshow(OPENCV_WINDOW, src);
 		     my_fit::control_param output_msg;
 		     ROS_INFO("dist: %f   theta: %f",dist_,theta_);
+		     int tempd=int(dist_/30);
+		     int tempt=int(theta_*10);
+		     // ROS_INFO("tempd  :  %d  ,tempt  :  %d",tempd,tempt);
+		     float w=float(tempd)/10+float(tempt)/20;
+		     ROS_INFO("the w is  :  %f",w);
 		     output_msg.dist=dist_;
 		     output_msg.theta=theta_;
 		     
 		     pub_.publish(output_msg);
-		     cv::waitKey(50);
+		     cv::waitKey(200);
 
 		     // Output modified video stream
 		     // image_pub_.publish(cv_ptr->toImageMsg());
@@ -88,165 +91,17 @@ public:
 		      		uchar* data = in.ptr<uchar>((int)i);
 		      		for(int j=0;j<in.cols;j++)
 		      		{
-		      			if( data[j * 3 + 0]>110||data[j * 3 + 1]>110)// Red channel
+		      			if( data[j * 3 + 0]>100||data[j * 3 + 1]>100)// Red channel
 		      				continue;
 		      			//
-		      			if(data[j * 3] +data[j * 3 + 1]+10>data[j * 3 + 2])//Green&Blue channel
+		      			if(data[j * 3] +data[j * 3 + 1]>data[j * 3 + 2])//Green&Blue channel
 		      				continue;
 		      			out.at<uchar>(i,j)=255;
 		      		}
 		      	}//for1 loop
 	  };//ColorThresh
 
-	  void thinImage(cv::Mat& in,cv::Mat& out,int maxIterations)
-	    {
-	    	using namespace cv;
-	        using namespace std;
-	    	//IplImage* src= cvCreateImage(cvSize(in.cols,in.rows),IPL_DEPTH_8U,in.channels());
-	    	//IplImage* dst=cvCreateImage(cvSize(out.cols,in.rows),IPL_DEPTH_8U,out.channels());;
-
-	    	IplImage tempdst=out;IplImage tempsrc=in;
-	    	IplImage* dst=&tempdst;IplImage* src=&tempsrc;
-	    	//src->imageData=(char*)in.data;
-	    	//dst->imageData=(char*)out.data;
-	    	CvSize size = cvGetSize(src);
-	    	cvCopy(src,dst);//将src中的内容拷贝到dst中
-	    	//cvThreshold(dst,dst,0,1,cv::THRESH_BINARY);//转换为二值图像
-	    	int count = 0;	//记录迭代次数
-	    	while (true)
-	    	{
-	    		count++;
-	    		if(maxIterations!=-1 && count > maxIterations) //限制次数并且迭代次数到达
-	    			break;
-	    		//std::cout << count << ' ';输出迭代次数
-	    		vector<pair<int,int> > mFlag; //用于标记需要删除的点
-	    		//对点标记
-	    		for (int i=0; i<size.height; ++i)
-	    		{
-	    			for (int j=0; j<size.width; ++j)
-	    			{
-	    				//如果满足四个条件，进行标记
-	    				//  p9 p2 p3
-	    				//  p8 p1 p4
-	    				//  p7 p6 p5
-	    				int p1 = CV_IMAGE_ELEM(dst,uchar,i,j);
-	    				int p2 = (i==0)?0:CV_IMAGE_ELEM(dst,uchar,i-1,j);
-	    				int p3 = (i==0 || j==size.width-1)?0:CV_IMAGE_ELEM(dst,uchar,i-1,j+1);
-	    				int p4 = (j==size.width-1)?0:CV_IMAGE_ELEM(dst,uchar,i,j+1);
-	    				int p5 = (i==size.height-1 || j==size.width-1)?0:CV_IMAGE_ELEM(dst,uchar,i+1,j+1);
-	    				int p6 = (i==size.height-1)?0:CV_IMAGE_ELEM(dst,uchar,i+1,j);
-	    				int p7 = (i==size.height-1 || j==0)?0:CV_IMAGE_ELEM(dst,uchar,i+1,j-1);
-	    				int p8 = (j==0)?0:CV_IMAGE_ELEM(dst,uchar,i,j-1);
-	    				int p9 = (i==0 || j==0)?0:CV_IMAGE_ELEM(dst,uchar,i-1,j-1);
-
-	    				if ((p2+p3+p4+p5+p6+p7+p8+p9)>=2 && (p2+p3+p4+p5+p6+p7+p8+p9)<=6)
-	    				{
-	    					int ap=0;
-	    					if (p2==0 && p3==1) ++ap;
-	    					if (p3==0 && p4==1) ++ap;
-	    					if (p4==0 && p5==1) ++ap;
-	    					if (p5==0 && p6==1) ++ap;
-	    					if (p6==0 && p7==1) ++ap;
-	    					if (p7==0 && p8==1) ++ap;
-	    					if (p8==0 && p9==1) ++ap;
-	    					if (p9==0 && p2==1) ++ap;
-
-	    					if (ap==1)
-	    					{
-	    						if (p2*p4*p6==0)
-	    						{
-	    							if (p4*p6*p8==0)
-	    							{
-	    								//标记
-	    								mFlag.push_back(make_pair(i,j));
-	    							}
-	    						}
-	    					}
-	    				}
-	    			}
-	    		}
-
-	    		//将标记的点删除
-	    		for (vector<pair<int,int> >::iterator i=mFlag.begin(); i!=mFlag.end(); ++i)
-	    		{
-	    			CV_IMAGE_ELEM(dst,uchar,i->first,i->second) = 0;
-	    		}
-
-	    		//直到没有点满足，算法结束
-	    		if (mFlag.size()==0)
-	    		{
-	    			break;
-	    		}
-	    		else
-	    		{
-	    			mFlag.clear();//将mFlag清空
-	    		}
-
-	    		//对点标记
-	    		for (int i=0; i<size.height; ++i)
-	    		{
-	    			for (int j=0; j<size.width; ++j)
-	    			{
-	    				//如果满足四个条件，进行标记
-	    				//  p9 p2 p3
-	    				//  p8 p1 p4
-	    				//  p7 p6 p5
-	    				int p1 = CV_IMAGE_ELEM(dst,uchar,i,j);
-	    				if(p1!=1) continue;
-	    				int p2 = (i==0)?0:CV_IMAGE_ELEM(dst,uchar,i-1,j);
-	    				int p3 = (i==0 || j==size.width-1)?0:CV_IMAGE_ELEM(dst,uchar,i-1,j+1);
-	    				int p4 = (j==size.width-1)?0:CV_IMAGE_ELEM(dst,uchar,i,j+1);
-	    				int p5 = (i==size.height-1 || j==size.width-1)?0:CV_IMAGE_ELEM(dst,uchar,i+1,j+1);
-	    				int p6 = (i==size.height-1)?0:CV_IMAGE_ELEM(dst,uchar,i+1,j);
-	    				int p7 = (i==size.height-1 || j==0)?0:CV_IMAGE_ELEM(dst,uchar,i+1,j-1);
-	    				int p8 = (j==0)?0:CV_IMAGE_ELEM(dst,uchar,i,j-1);
-	    				int p9 = (i==0 || j==0)?0:CV_IMAGE_ELEM(dst,uchar,i-1,j-1);
-
-	    				if ((p2+p3+p4+p5+p6+p7+p8+p9)>=2 && (p2+p3+p4+p5+p6+p7+p8+p9)<=6)
-	    				{
-	    					int ap=0;
-	    					if (p2==0 && p3==1) ++ap;
-	    					if (p3==0 && p4==1) ++ap;
-	    					if (p4==0 && p5==1) ++ap;
-	    					if (p5==0 && p6==1) ++ap;
-	    					if (p6==0 && p7==1) ++ap;
-	    					if (p7==0 && p8==1) ++ap;
-	    					if (p8==0 && p9==1) ++ap;
-	    					if (p9==0 && p2==1) ++ap;
-
-	    					if (ap==1)
-	    					{
-	    						if (p2*p4*p8==0)
-	    						{
-	    							if (p2*p6*p8==0)
-	    							{
-	    								//标记
-	    								mFlag.push_back(make_pair(i,j));
-	    							}
-	    						}
-	    					}
-	    				}
-	    			}
-	    		}
-	    		//删除
-	    		for (vector<pair<int,int> >::iterator i=mFlag.begin(); i!=mFlag.end(); ++i)
-	    		{
-	    			CV_IMAGE_ELEM(dst,uchar,i->first,i->second) = 0;
-	    		}
-
-	    		//直到没有点满足，算法结束
-	    		if (mFlag.size()==0)
-	    		{
-	    			break;
-	    		}
-	    		else
-	    		{
-	    			mFlag.clear();//将mFlag清空
-	    		}
-	    	}
-	    	cv::Mat tempMat(dst);
-	    	tempMat.copyTo(out);
-	    };
+	  
 
 	   void GetPointset(cv::Mat& in,std::vector<cv::Point2f>& Pt_set)
 	    {
@@ -298,8 +153,7 @@ public:
 
 	    void DrawLine(cv::Mat& res,cv::Mat& paramA,cv::Point2f& pt_sta,cv::Point2f& pt_end)
 	    {
-	    	//std::cout<<pt_sta.x<<std::endl;
-	    	//std::cout<<pt_end.x<<std::endl;
+	    	
 	    	if(res.empty()||paramA.empty())
 	    		return;
 	    	int r=res.rows;
@@ -307,7 +161,7 @@ public:
 	    	int i,i_stop;
 	    	if(pt_sta.x<=pt_end.x)
 	    	{
-	    		 i=pt_sta.x;
+	    	     i=pt_sta.x;
 	    	     i_stop=pt_end.x;
 	    	}
 	    	else
@@ -328,6 +182,7 @@ public:
 	             data[y * 3 + 2] = 255; // Red
 	    		// std::cout<<"["<<y<<","<<i<<"]"<<std::endl;
 	    	}
+	    	
 	    	cv::imshow("result",res);
 
 	    };
