@@ -20,10 +20,13 @@ public:
 	  cv::Mat paramA_;
 	  float dist_;
 	  float theta_;
-	  
+	  std::list<float>* list_w;
+	  float weigh_w[5];
 	  myfit():it_(nh_),dist_(0),theta_(0)
 	  {
 		  // Subscrive to input video feed and publish output video feed
+		      list_w=new std::list<float>(5,0);
+		      weigh_w[0]=0.5;weigh_w[1]=0.19;weigh_w[2]=0.08;weigh_w[3]=0.02;weigh_w[4]=0.01;
 		      ptset_.clear();
 		      kernel_=(cv::Mat_<uchar>(3,3)<<0,1,0,1,1,1,0,1,0); //morph kernel
 		     // image_sub_ = it_.subscribe("/usb_cam/image_raw", 1, &myfit::imageCb, this);
@@ -65,6 +68,17 @@ public:
 		     int tempt=int(theta_*10);
 		     // ROS_INFO("tempd  :  %d  ,tempt  :  %d",tempd,tempt);
 		     float w=float(tempd)/10+float(tempt)/20;
+		      if (w>3||w<-3)
+       			w=0;
+       		     list_w->push_front(w);
+       		     list_w->pop_back();
+       		     int ind=0;
+       		     w=0;
+       		     for(std::list<float>::iterator it=list_w->begin();it!=list_w->end();it++,ind++)
+		      {
+		      w+=(*it)*weigh_w[ind];
+			//std::cout<<(*it)*weigh_w[ind]<<std::endl;
+		      }
 		     ROS_INFO("the w is  :  %f",w);
 		     output_msg.dist=dist_;
 		     output_msg.theta=theta_;
@@ -238,6 +252,7 @@ int main(int argc, char** argv)
        
 		//cv::waitKey(30);
 	}
+  delete mf.list_w;
   return 0;
 }
 

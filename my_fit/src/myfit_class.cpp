@@ -27,15 +27,12 @@ public:
 		      ptset_.clear();
 		      kernel_=(cv::Mat_<uchar>(3,3)<<0,1,0,1,1,1,0,1,0); //morph kernel
 		      image_sub_ = it_.subscribe("/usb_cam/image_raw", 1, &myfit::imageCb, this);
-		      pub_ = nh_.advertise<my_fit::control_param>("/myfit/control_param", 1);
+		      pub_ = nh_.advertise<my_fit::control_param>("/myfit/control_param", 10);
 		      cv::namedWindow(OPENCV_WINDOW,CV_WINDOW_KEEPRATIO|CV_WINDOW_NORMAL);
 		      cv::namedWindow("result",CV_WINDOW_KEEPRATIO|CV_WINDOW_NORMAL);
-		      // cv::namedWindow("edge",CV_WINDOW_KEEPRATIO|CV_WINDOW_NORMAL);
-		         cv::namedWindow("mask",CV_WINDOW_KEEPRATIO|CV_WINDOW_NORMAL);
 	  }
 	  void imageCb(const sensor_msgs::ImageConstPtr& msg)
 	  {
-	  
 		  cv_bridge::CvImagePtr cv_ptr;
 		     try
 		     {
@@ -48,40 +45,37 @@ public:
 		     }
                      cv::Mat src(cv_ptr->image);
 		     // processing on the video stream
-		     int r=src.rows;
-		     int c=src.cols;
-		     
-		     cv::Mat mask,edge;
+		    cv::Mat mask,edge;
 
 		     this->ColorThresh(src,mask);
 		     cv::morphologyEx(mask,mask,cv::MORPH_OPEN,kernel_,cv::Point(-1,-1),1);
 		     cv::morphologyEx(mask,mask,cv::MORPH_CLOSE,kernel_,cv::Point(-1,-1),3);
 		     cv::imshow("mask", mask);
-		     cv::threshold(mask,mask,0,1,cv::THRESH_BINARY);
-		     edge.create(r,c,mask.type());
-		     this->thinImage(mask,edge,100);
-		  //   cv::imshow("edge", edge);
-		     
+		     cv::cvtColor(mask,edge,CV_GRAY2BGR);
+		     int r=edge.rows;
+		     int c=edge.cols;
 		     ptset_.clear();
-		     this->GetPointset(edge,ptset_);
+		     this->GetPointset(mask,ptset_);
 		     this->LeastsquareFit(ptset_,paramA_);
+		     cv::rectangle(edge,cv::Point(c/2-10,r/2-10), cv::Point(c/2+10,r/2+10),cv::Scalar(0,255,0),5);
 		     this->DrawLine(edge,paramA_,ptset_[0],ptset_[ptset_.size()-1]);
 		     this->GetLocation(paramA_,&edge);
 		     // Update GUI Window
-		     cv::imshow(OPENCV_WINDOW, cv_ptr->image);
+		     cv::imshow(OPENCV_WINDOW, src);
 		     my_fit::control_param output_msg;
-		     //ROS_INFO("dist: %f   theta: %f",dist_,theta_);
+		     ROS_INFO("dist: %f   theta: %f",dist_,theta_);
+		     int tempd=int(dist_/30);
+		     int tempt=int(theta_*10);
+		     // ROS_INFO("tempd  :  %d  ,tempt  :  %d",tempd,tempt);
+		     float w=float(tempd)/10+float(tempt)/20;
+		      ROS_INFO("w   : %f",w);
+		     cv::waitKey(60);
 		     output_msg.dist=dist_;
 		     output_msg.theta=theta_;
 		     pub_.publish(output_msg);
-		     cv::waitKey(100);
-
-		     // Output modified video stream
-		     // image_pub_.publish(cv_ptr->toImageMsg());
-		     
 	  };//imageCb
 
-	  void ColorThresh(cv::Mat& in,cv::Mat& out)
+	 void ColorThresh(cv::Mat& in,cv::Mat& out)
 	  {
 		      	if(in.empty()||in.channels()!=3)
 		      		return;
@@ -98,7 +92,7 @@ public:
 		      			if( data[j * 3 + 0]>110||data[j * 3 + 1]>110)// Red channel
 		      				continue;
 		      			//
-		      			if(data[j * 3] +data[j * 3 + 1]+10>data[j * 3 + 2])//Green&Blue channel
+		      			if(data[j * 3] +data[j * 3 + 1]-10>data[j * 3 + 2])//Green&Blue channel
 		      				continue;
 		      			out.at<uchar>(i,j)=255;
 		      		}
@@ -354,7 +348,7 @@ public:
 
 	        };
 
-	     double myfunc(cv::Mat& paramA,double x)
+		double myfunc(cv::Mat& paramA,double x)
 		{
 			if(paramA.empty())
 			{
