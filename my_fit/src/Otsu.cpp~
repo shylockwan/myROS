@@ -2,7 +2,7 @@
 #include "opencv2/highgui/highgui.hpp"
 #include <iostream>
 
-int Otsu(cv::Mat& in,cv::Mat& mask)
+int Otsu(cv::Mat in,cv::Mat& mask)
 {  
         using namespace cv;
 	if(in.empty())

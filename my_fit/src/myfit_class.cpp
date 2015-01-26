@@ -45,17 +45,32 @@ public:
 		     }
                      cv::Mat src(cv_ptr->image);
 		     // processing on the video stream
-		    cv::Mat mask,edge;
-
-		     this->ColorThresh(src,mask);
-		     cv::morphologyEx(mask,mask,cv::MORPH_OPEN,kernel_,cv::Point(-1,-1),1);
-		     cv::morphologyEx(mask,mask,cv::MORPH_CLOSE,kernel_,cv::Point(-1,-1),3);
-		     cv::imshow("mask", mask);
-		     cv::cvtColor(mask,edge,CV_GRAY2BGR);
-		     int r=edge.rows;
-		     int c=edge.cols;
+		    cv::Mat mask;
+		     int r=src.rows;
+		     int c=src.cols;
+		     
+		    
+#if 1////RGB转HSV
+			cv::Mat hsv;
+			cvtColor(src,hsv,CV_BGR2HSV_FULL);
+			std::vector<cv::Mat> hsv_planes;
+			split(hsv,hsv_planes);
+			cv::Mat src_h=hsv_planes[0];
+			
+	int thre=Otsu(src_h,mask);
+	ROS_INFO("the threshold of otsu is： %d  \n",thre);
+	cv::threshold(src_h,src_h,thre,255,cv::THRESH_BINARY);
+	cv::medianBlur(src_h,src_h,5);
+	cv::imshow("mask",src_h);
+#endif
+		  
+		    // cv::morphologyEx(src_h,src_h,cv::MORPH_OPEN,kernel_,cv::Point(-1,-1),1);
+		     cv::morphologyEx(src_h,src_h,cv::MORPH_CLOSE,kernel_,cv::Point(-1,-1),3);
+		     
+		     cv::cvtColor(src_h,edge,CV_GRAY2BGR);
+		     
 		     ptset_.clear();
-		     this->GetPointset(mask,ptset_);
+		     this->GetPointset(src_h,ptset_);
 		     this->LeastsquareFit(ptset_,paramA_);
 		     cv::rectangle(edge,cv::Point(c/2-10,r/2-10), cv::Point(c/2+10,r/2+10),cv::Scalar(0,255,0),5);
 		     this->DrawLine(edge,paramA_,ptset_[0],ptset_[ptset_.size()-1]);
@@ -75,30 +90,7 @@ public:
 		     pub_.publish(output_msg);
 	  };//imageCb
 
-	 void ColorThresh(cv::Mat& in,cv::Mat& out)
-	  {
-		      	if(in.empty()||in.channels()!=3)
-		      		return;
-
-		      	if(out.empty())
-		      		out.create(in.rows,in.cols,CV_8UC1);
-
-		      	out.setTo(0);
-		      	for(int i=0;i<in.rows;i++)
-		      	{
-		      		uchar* data = in.ptr<uchar>((int)i);
-		      		for(int j=0;j<in.cols;j++)
-		      		{
-		      			if( data[j * 3 + 0]>110||data[j * 3 + 1]>110)// Red channel
-		      				continue;
-		      			//
-		      			if(data[j * 3] +data[j * 3 + 1]-10>data[j * 3 + 2])//Green&Blue channel
-		      				continue;
-		      			out.at<uchar>(i,j)=255;
-		      		}
-		      	}//for1 loop
-	  };//ColorThresh
-
+	
 	  void thinImage(cv::Mat& in,cv::Mat& out,int maxIterations)
 	    {
 	    	using namespace cv;

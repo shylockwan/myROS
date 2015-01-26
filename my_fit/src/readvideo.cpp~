@@ -1,0 +1,45 @@
+#include  <ros/ros.h>
+#include <image_transport/image_transport.h>
+#include <sensor_msgs/image_encodings.h>
+#include <cv_bridge/cv_bridge.h>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
+int main (int argc,char** argv)
+{
+	ros::init(argc,argv,"read_video");
+	ros::NodeHandle nh;
+	cv::Mat frame;
+	cv::Mat_<uchar> bg=cv::Mat_<uchar>::ones(100,100);
+	bg*=255;
+	cv::namedWindow("video",1);
+	cv::VideoCapture  cap("1.MOV");
+	cv::waitKey(1000);
+	if(!cap.isOpened())
+	{
+
+		ROS_INFO("failed to loaded video");
+		cv::imshow("video",bg);
+		return 0;
+	}
+        cap>>frame;
+        cv::imwrite("001.jpg",frame);
+        int counts=0;
+	while(ros::ok())
+	{
+                counts++;
+                cap.read(frame);
+		if(frame.empty())
+                {
+                   ROS_INFO("no video is loaded,try %d times",counts);
+
+                   continue;
+                }
+
+                cv::imshow("video",frame);
+		cv::waitKey(30);
+	}
+
+    return 0;
+}
+
