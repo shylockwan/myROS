@@ -1,0 +1,5 @@
+<launch>
+<rosparam file="$(find my_ros)/launch/myparam.yaml"/> 
+  <node pkg="nodelet" type="nodelet" name="contro" args="load contro_nodelet myros_nodelet" output="screen" >
+  </node>		
+</launch>
