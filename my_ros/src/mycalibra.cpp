@@ -7,7 +7,7 @@
 
 #define CHUIZHI  0.262 //摄影机垂直视野角一半；单位为rad
 #define  SHUIPING  0.34   	// beta0=0.35;//m_HorShiYeAng;摄影机水平视野角一半
-#define HEIGHT  32  //摄像机height 单位cm
+#define HEIGHT  21  //摄像机height 单位cm
 #define DELTA_Y  20 //cm
 static const std::string OPENCV_WINDOW = "Image window";
 class myCalibra
@@ -144,15 +144,15 @@ public:
 			end_y=(r-1)/2- end_y;
 			float A=2*start_y*tan(CHUIZHI)/r;
 			float B=2*end_y*tan(CHUIZHI)/r;
-			float W=(DELTA_Y/HEIGHT+(1/A)-(1/B))*A*B;
-			ROS_INFO("A=  %f  ,B= %f   ",A,B);
-			float _a=W*A*B;
-			float _b=B*B-W*A-W*B-A*A;
-			float _c=W-A*A*B+A*B*B+A-B;
+			float C=float(DELTA_Y)/float(HEIGHT);
+			ROS_INFO("A=  %f  ,B= %f  C=%f ",A,B,C);
+			float _a=A-B-A*B*C;
+			float _b=A*C+B*C;
+			float _c=A-B-C;
 			float x1=(-_b+sqrt(_b*_b-4*_a*_c))/(2*_a);
 			float x2=(-_b-sqrt(_b*_b-4*_a*_c))/(2*_a);
 			float arcx=atan(x1)*180/CV_PI;
-			ROS_INFO("a=  %f  ,b= %f   ,c=   %f,,W=   %f ",_a,_b,_c,W);
+			ROS_INFO("a=  %f  ,b= %f   ,c=   %f, ",_a,_b,_c);
 			ROS_INFO("start_y=  %f  ,end_y= %f   ,x1=   %f,,x2=   %f ",start_y,end_y,x1,x2);
 			ROS_INFO("x=   %f,arcx=   %f ",atan(x1),arcx);
 			return arcx;

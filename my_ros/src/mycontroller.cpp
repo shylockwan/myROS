@@ -40,7 +40,11 @@ public:
 	};
 	void callBack(const my_ros::control_param::ConstPtr& msg) {
 		if(0==flag_move)
-			return;
+		{
+		   setTwist();
+		   return;
+		}
+			
 		float weigh_w[5] = { 0.56, 0.28, 0.1, 0.04, 0.02 };
 		ROS_INFO("dist: %f   theta1: %f   theta2: %f RADIUS:  %f ", msg->dist,
 				msg->theta1, msg->theta2, RADIUS);
