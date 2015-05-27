@@ -54,7 +54,7 @@ public:
 		odom_sub = node_.subscribe<nav_msgs::Odometry>("/odom", 1,
 				&myfit::odomCallback, this);
 		//cv::namedWindow("src", CV_WINDOW_KEEPRATIO | CV_WINDOW_NORMAL);
-		//cv::namedWindow("result", CV_WINDOW_KEEPRATIO | CV_WINDOW_NORMAL);
+		cv::namedWindow("result", CV_WINDOW_KEEPRATIO | CV_WINDOW_NORMAL);
 		//cv::namedWindow("field", CV_WINDOW_KEEPRATIO | CV_WINDOW_NORMAL);
 
 		return true;
@@ -363,8 +363,8 @@ public:
 			// std::cout<<"["<<y<<","<<i<<"]"<<std::endl;
 		}
 
-		//cv::imshow("result", res);
-		//cv::waitKey(30);
+		cv::imshow("result", res);
+		cv::waitKey(30);
 
 	}
 	void odomCallback(const nav_msgs::Odometry::ConstPtr& msg) {

@@ -18,7 +18,7 @@ public:
 	    myfit_.reset();
 	    mymap_.reset();
 
-	 //   update_thread_.join();
+	    update_thread_.join();
 	  }
 	void onInit()
 	{
@@ -31,9 +31,9 @@ public:
 		if(myfit_->init()  )
 			{
 				ROS_INFO("fit_Nodelet initialised");
-				this->update();
+			    //this->update();
 				//ROS_INFO("Kobuki initialised. Spinning up update thread ... [ %s]",name);
-				//update_thread_.start(&fit_nodelet::update,*this);
+				update_thread_.start(&fit_nodelet::update,*this);
 				//ROS_INFO("Nodelet initialised");
 			}
 
@@ -53,8 +53,8 @@ private:
 
 		 while (! shutdown_requested_ && ros::ok())
 		    {
-			//myfit_->spin();//myfit_接收usb_cam图像，调用imgCb处理
-		   // mymap_->updateMap(myfit_->pt_robot, myfit_->pt_obj);
+			myfit_->spin();//myfit_接收usb_cam图像，调用imgCb处理
+		    mymap_->updateMap(myfit_->pt_robot, myfit_->pt_obj);
 			spin_rate.sleep();
 		    }
 		}

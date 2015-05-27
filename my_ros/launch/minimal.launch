@@ -1,16 +1,22 @@
 <launch>
 <rosparam file="$(find my_ros)/launch/myparam.yaml"/> 
-<node pkg="my_ros" type="myfit" name="fit" output="screen">
+ <node pkg="my_ros" type="myfit" name="fit" output="screen">
 </node>
 <node pkg="my_ros" type="mycontroller" name="contro"  output="screen">
 </node>
+
 	
    	  
 		
 </launch>
-<!--  <node pkg="nodelet" type="nodelet" name="myros_nodelet"  args="manager" />
-  <node pkg="nodelet" type="nodelet" name="fit" args="load fit_nodelet myros_nodelet" output="screen" launch-prefix="/usr/bin/xterm -rv -e gdb -ex r -args">
+<!--
+launch-prefix="/usr/bin/xterm -rv -e gdb -ex r -args"
+<node pkg="nodelet" type="nodelet" name="myros_nodelet"  args="manager" />
+  <node pkg="nodelet" type="nodelet" name="fit" args="load fit_nodelet myros_nodelet" output="screen" >
 </node>
  <node pkg="nodelet" type="nodelet" name="contro" args="load contro_nodelet myros_nodelet" output="screen" >
-  
-    </node> -->
+ </node>
+
+
+
+  -->

@@ -4,7 +4,9 @@
 #include <list>
 #include <termios.h>
 #include <ecl/threads.hpp>
+#include <fstream>
 #define RADIUS (0.1*0.2)
+ static std::ofstream f;
 namespace myros {
 class mycontroller {
 public:
@@ -12,7 +14,7 @@ public:
 	ros::Publisher pub_;
 	ros::NodeHandle node_;
 	mycontroller(ros::NodeHandle n) :
-			FUYANG(0.8), HEIGHT(32.0) ,node_(n),flag_move(0),kfd(0){
+			FUYANG(0.8), HEIGHT(32.0) ,node_(n),flag_move(0),kfd(0),fit_contro_ID(0),contro_ID(0){
 		list_w = new std::list<float>(5, 0.0);
 		keyop_='s';
 	}
@@ -50,6 +52,7 @@ public:
 				msg->theta1, msg->theta2, RADIUS);
 		float d = msg->dist; //dist>0:left  ; dist<0:right;
 		float w = -msg->theta1; //theat>0:conterclockwise  ; theta<0:clockwise
+		fit_contro_ID=msg->fit_ID;
 		w /= (RADIUS * 20);
 		if (w > 1.047)
 			w = 1.047;
@@ -72,6 +75,8 @@ public:
 	{
 		ros::spinOnce();
 		pub_.publish(twist_msg);
+		f<<++contro_ID<<" "<<fit_contro_ID<<" "<<twist_msg.linear.x<<" "<<twist_msg.angular.z;
+		f<<std::endl;
 
 	}
 	void setTwist(const float& lx_=0,const float& ly_=0,const float& lz_=0,
@@ -113,8 +118,9 @@ public:
 		}
 	}
 	bool flag_move;
+	long int fit_contro_ID;
+	long int contro_ID;
 private:
-
 	std::list<float>* list_w;
 	float FUYANG, HEIGHT;
 	geometry_msgs::Twist twist_msg;
@@ -131,6 +137,7 @@ int main(int argc, char** argv)
   ros::NodeHandle nh_;
   ROS_INFO("my_controller  has been init  and wait for arrival of control_param !!!");
   myros::mycontroller mc_(nh_);
+  f.open("/home/shylockwang/mycontroller_out.txt",std::ios_base::out);
   mc_.setTwist();
   ros::Rate loop_rate(3);
   if(mc_.init())
@@ -139,7 +146,7 @@ int main(int argc, char** argv)
  while (ros::ok())
   {
 	 mc_.spin();
-	 ROS_INFO("flag_move= %d",mc_.flag_move);
+	 //ROS_INFO("flag_move= %d",mc_.flag_move);
 	 loop_rate.sleep();
   }
   }

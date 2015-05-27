@@ -108,13 +108,13 @@ include_directories(
 # add_library(my_ros
 #   src/${PROJECT_NAME}/my_ros.cpp
 # )
-add_library(fit_nodelet  src/nodelet/MTfit_nodelet.cpp )
-add_library(contro_nodelet  src/nodelet/MTcontroller_nodelet.cpp )
+#add_library(fit_nodelet  src/nodelet/MTfit_nodelet.cpp )
+#add_library(contro_nodelet  src/nodelet/MTcontroller_nodelet.cpp )
 ## Declare a cpp executable
 # add_executable(my_ros_node src/my_ros_node.cpp)
-add_executable(myfit src/myfit.cpp)
-add_executable(mycontroller src/mycontroller.cpp)
-add_executable(mycalibra src/mycalibra.cpp)
+#add_executable(myfit src/myfit.cpp)
+#add_executable(mycontroller src/mycontroller.cpp)
+#add_executable(mycalibra src/mycalibra.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -124,11 +124,11 @@ add_executable(mycalibra src/mycalibra.cpp)
 # target_link_libraries(my_ros_node
 #   ${catkin_LIBRARIES}
 # )
- target_link_libraries(fit_nodelet   ${catkin_LIBRARIES} )
- target_link_libraries(contro_nodelet   ${catkin_LIBRARIES} )
- target_link_libraries(myfit   ${catkin_LIBRARIES} )
- target_link_libraries(mycontroller   ${catkin_LIBRARIES} )
-  target_link_libraries(mycalibra   ${catkin_LIBRARIES} )
+# target_link_libraries(fit_nodelet   ${catkin_LIBRARIES} )
+# target_link_libraries(contro_nodelet   ${catkin_LIBRARIES} )
+# target_link_libraries(myfit   ${catkin_LIBRARIES} )
+# target_link_libraries(mycontroller   ${catkin_LIBRARIES} )
+ # target_link_libraries(mycalibra   ${catkin_LIBRARIES} )
 #############
 ## Install ##
 #############

@@ -16,8 +16,8 @@ public:
 		map = cv::Mat_<cv::Vec3b>::zeros(1000, 1000);
 		objmap = cv::Mat_<cv::Vec3b>::zeros(1000, 1000);
 		cv::circle(map, cur_pt, 1, cv::Scalar(0, 0, 255), 1);
-		//cv::namedWindow("map_robot/cm", CV_WINDOW_KEEPRATIO | CV_WINDOW_NORMAL);
-		//cv::namedWindow("map_obj/cm", CV_WINDOW_KEEPRATIO | CV_WINDOW_NORMAL);
+		cv::namedWindow("map_robot/cm", CV_WINDOW_KEEPRATIO | CV_WINDOW_NORMAL);
+		cv::namedWindow("map_obj/cm", CV_WINDOW_KEEPRATIO | CV_WINDOW_NORMAL);
 		//cv::setMouseCallback("map_obj/cm", &(this->mouseCallback), 0);
 	};
 	/*void mouseCallback(int event, int x, int y, int flags, void* ustc) {
@@ -41,9 +41,9 @@ public:
 		cv::line(map, last_pt, cur_pt, cv::Scalar(255, 255, 0), 1);
 		cv::circle(objmap, cur_ptobj, 1, cv::Scalar(0, 0, 255), 1);
 		cv::line(objmap, last_ptobj, cur_ptobj, cv::Scalar(255, 255, 0), 1);
-		//cv::imshow("map_robot/cm", map);
-	//	cv::imshow("map_obj/cm", objmap);
-		//cv::waitKey(30);
+		cv::imshow("map_robot/cm", map);
+	    cv::imshow("map_obj/cm", objmap);
+		cv::waitKey(30);
 		last_pt = cur_pt;
 		last_ptobj = cur_ptobj;
 		ROS_INFO("pt_robot__x:   %d,   pt_robot__y:  %d", pt_robot.x,pt_robot.y);

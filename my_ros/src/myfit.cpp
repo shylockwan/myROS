@@ -9,6 +9,9 @@
 #include <vector>
 #include <nav_msgs/Odometry.h>
 #include <tf/tf.h>
+#include <fstream>
+
+ static std::ofstream f;
 namespace myros {
 class myfit {
 public:
@@ -28,10 +31,11 @@ public:
 	float dist_;
 	float theta_1, theta_2, theta_robot;
 	float FUYANG, CHUIZHI, SHUIPING, HEIGHT;
+	long int fit_contro_ID;
 	myfit(ros::NodeHandle nh_) :
 			node_(nh_), it_(nh_), dist_(0.0), theta_1(0.0), theta_2(0.0), theta_robot(
 					0.0), FUYANG(1.00), CHUIZHI(0.262), SHUIPING(0.34), HEIGHT(
-					32.0) {
+					32.0) ,fit_contro_ID(0){
 		// Subscrive to input video feed and publish output video feed
 		paramA_=cv::Mat::zeros(4,1,CV_32FC1);
 		field_world=cv::Mat_<cv::Vec3b>::zeros(500,500);
@@ -446,7 +450,11 @@ public:
 		contro_param.theta1=theta_1;
 		contro_param.theta2=theta_2;
 		contro_param.dist=dist_;
+		contro_param.fit_ID=(++fit_contro_ID);
 		pub_.publish(contro_param);
+		f<<fit_contro_ID<<" ("<<pt_obj.x<<","<<pt_obj.y<<") ("
+				<<pt_robot.x<<","<<pt_robot.y<<")";
+		f<<std::endl;
 
 	}
 };
@@ -514,6 +522,7 @@ int main(int argc, char** argv)
   myros::myfit mf(nh);
   myros::mymap mm(nh);
   ROS_INFO("my_fit application has been init and wait for arrival of usb_cam image!!!");
+  f.open("/home/shylockwang/myfit_out.txt",std::ios_base::out);
  // ros::Publisher pub_ = nh.advertise<my_fit::control_param>("/myfit/control_param", 1);
 //  ros::Publisher objpose_pub=nh.advertise<geometry_msgs::Pose2D>("/myfit/objectPose",1);
   ros::Rate loop_rate(5);
