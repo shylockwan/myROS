@@ -51,7 +51,7 @@ public:
 		ROS_INFO("dist: %f   theta1: %f   theta2: %f RADIUS:  %f ", msg->dist,
 				msg->theta1, msg->theta2, RADIUS);
 		float d = msg->dist; //dist>0:left  ; dist<0:right;
-		float w = -msg->theta1; //theat>0:conterclockwise  ; theta<0:clockwise
+		float w = -msg->theta1; //
 		fit_contro_ID=msg->fit_ID;
 		w /= (RADIUS * 20);
 		if (w > 1.047)

@@ -397,7 +397,7 @@ public:
 
 		float res = (x-pt_robot.x) *( x-pt_robot.x)
 				+ (y - pt_robot.y) * (y - pt_robot.y)
-				- 20 * 20;		//cm
+				- 10 * 10;		//cm
 		return res;
 	}
 	;
