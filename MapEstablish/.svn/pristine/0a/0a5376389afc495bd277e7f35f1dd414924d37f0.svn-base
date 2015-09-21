@@ -1,0 +1,328 @@
+//==============================================================================
+//函数名： EstablishMap类的实现部分
+//作者：王华威
+//日期:  2015-8-25
+//功能: 等待客户端接收消息或者命令，切换状态并执行事件
+//修改记录：
+//==============================================================================
+#include <EstablishMap.hpp>
+#include <my_events.hpp>
+#include <DP.h>
+#include <zxingdecoder.h>
+//#include <cv_bridge/cv_bridge.h>
+#include<ctime>
+
+path BFS(string vt);
+
+using namespace std;
+using namespace cv;
+bool colorThresh(cv::Mat& in, cv::Mat& out, cv::Mat& mask, int high_threshold,
+		int low_threshold, bool flag_reverse = 0);
+cv::Point2f framePic2Field(const int& width, const int& height,
+			cv::Point& pt,const float gama0 ,const float m_Height ,const float alpha0,
+			const float beta0 ) ;
+cv::Point2f frameFiled2World(cv::Point2f& field_pt,cv::Point2f PtRobot,
+			const float ThetaRobot ,const float gama0,const float height_);
+void calcContourAngle(std::vector<cv::Point2f> ptset, float& angle,
+		cv::Point2f cen_);
+void calcRouteAngle(std::vector<cv::Point> pt_pics,const RobotStatus& rs,float& world_angle,const int& imgwidth_,const int& imgheight_){
+	if(pt_pics.empty())
+	{
+		std::cout<<"可视范围内未搜寻到待选路径"<<std::endl;
+		return ;
+	}
+	std::vector<cv::Point2f> ptset_world;
+	cv::Point2f pt_focal_field,pt_focal_world;
+	cv::Point pt_focal_pic(imgwidth_/2,imgheight_/2);
+	pt_focal_field=framePic2Field(imgwidth_, imgheight_,pt_focal_pic, rs.g_Fuyang,rs.g_Height, rs.g_Chuizhi, rs.g_Shuiping);
+	pt_focal_world=frameFiled2World(pt_focal_field, rs.m_PtRobot, rs.m_ThetaRobot,rs.g_Fuyang, rs.g_Height);
+//std::cout<<"11111111111111111111111111111111"<<std::endl;
+	for(std::vector<cv::Point>::iterator it=pt_pics.begin();it!=pt_pics.end();it++)
+	{
+		cv::Point2f pt_field,pt_world;
+		pt_field=framePic2Field(imgwidth_, imgheight_, *it, rs.g_Fuyang,
+						rs.g_Height, rs.g_Chuizhi, rs.g_Shuiping);
+		pt_world = frameFiled2World(pt_field, rs.m_PtRobot, rs.m_ThetaRobot,
+							rs.g_Fuyang, rs.g_Height);
+//std::cout<<"22222222222222222222222222222"<<std::endl;
+		ptset_world.push_back(pt_world);
+	}
+//std::cout<<"3333333333333333333333333333333333333"<<std::endl;
+	calcContourAngle(ptset_world,world_angle,pt_focal_world);
+	return;
+}
+
+void detectContours(cv::Mat img, vector<vector<cv::Point> >& contours,
+		vector<Vec4i>& hierarchy) {
+
+	//erode and dilate
+	cv::erode(img, img, cv::Mat(), cv::Point(-1, -1), 6);
+	cv::dilate(img, img, cv::Mat(), cv::Point(-1, -1), 6);
+	//imshow("result1", img);
+	findContours(img, contours, hierarchy, CV_RETR_CCOMP,
+			CV_CHAIN_APPROX_SIMPLE);
+	unsigned int Cmin = 10;
+	vector<vector<cv::Point> >::iterator itc = contours.begin();
+	while (itc != contours.end()) { //eliminate small contour
+		if (itc->size() < Cmin)
+			itc = contours.erase(itc);
+		else
+			++itc;
+	}
+} //detectContours
+std::vector<std::vector<cv::Point> > contoursDetect(cv::Mat im) {
+
+	cv::Mat hsv, out;
+	vector<cv::Mat> HSV;
+	cvtColor(im, hsv, CV_BGR2HSV_FULL);
+	split(hsv, HSV);
+	colorThresh(HSV[0], out, HSV[1], 15, 240, 1); //red
+	vector<vector<cv::Point> > contours;
+	vector<cv::Vec4i> hierarchy;
+	detectContours(out, contours, hierarchy);
+
+	vector<vector<cv::Point> > subContourPoints;
+	vector<Mat> subContours;
+	if (contours.size() > 0) {
+		int idx = 0;
+		for (; idx >= 0; idx = hierarchy[idx][0]) {
+			cv::Mat img = cv::Mat::zeros(im.rows, im.cols, CV_8U);
+			drawContours(img, contours, idx, cv::Scalar(255), CV_FILLED, 8,
+					hierarchy);
+
+			vector<cv::Point> contoursPoint;
+			for (int nr = 0; nr < im.rows; ++nr) {
+				uchar* data = img.ptr<uchar>(nr); //row first addr
+				for (int nc = 0; nc < im.cols; ++nc) {
+					if (data[nc] == 255)
+						contoursPoint.push_back(Point(nc, nr));
+				}
+			}
+			subContourPoints.push_back(contoursPoint);
+		}
+	} //else cout<<"no contours!!!"<<endl;
+
+	return subContourPoints;
+} //contoursDetect
+
+namespace establishmap {
+bool StateReady::onInit() {
+	ROS_INFO("___________________________now Robot is  Ready");
+	return 1;
+}
+;
+void StateReady::stateHandle(EstablishMapEvent& state_,
+		RobotStatus& robot_status_) {
+	if (state_.report_ != 0)
+		return;
+	if (state_.selfloc_state == 0){
+		state_.next_state = EstablishMapEvent::wait_selfloc;
+		state_.flag_eventFinish = 1;
+	}
+	else {
+		if (state_.map_state == 0){
+			state_.next_state = EstablishMapEvent::logmap;
+			state_.flag_eventFinish = 1;
+		}
+			
+		else
+			state_.next_state = EstablishMapEvent::ready;
+	}
+
+}
+;
+bool StateWait_SelfLoc::onInit() {
+	ROS_INFO("___________________________now Robot is  Wait_SelfLoc");
+	return 1;
+}
+;
+void StateWait_SelfLoc::stateHandle(EstablishMapEvent& state_,
+		RobotStatus& robot_status_) {
+	if (state_.report_ != 0)
+		return;
+	establishmap::Self_Loc_Req srv;
+	ROS_INFO("________________call for SRV selfLoc,and wait now___________");
+	if (client_selfLoc.call(srv)) {
+		flag_subselfLoc=1;
+		//sleep(1);
+		ROS_INFO("_____________%d_",result_selfLoc);
+		while(ros::ok())
+		{
+			ros::spinOnce();
+            // ROS_INFO("_____________%d_",result_selfLoc);
+			if(result_selfLoc==13){
+				sleep(1);
+				ROS_INFO(	"________________call SRV selfLoc inginging");
+								continue;
+			}
+		    else if (result_selfLoc==12) {
+				state_.selfloc_state = 1;
+				state_.next_state = EstablishMapEvent::logmap;
+				pub_resetOdom.publish(std_msgs::Empty());
+				ROS_INFO(
+						"________________call SRV selfLoc successfully___________");
+				break;
+			} else if (result_selfLoc == 14) {
+				state_.next_state = EstablishMapEvent::ready;
+				state_.report_ = 1;
+				ROS_INFO("________________call SRV selfLoc fail___________");
+				break;
+			}
+		}
+		state_.flag_eventFinish = 1;
+		flag_subselfLoc=0;
+	}
+
+}
+;
+
+void StateWait_SelfLoc::waitselfLocCallback(const zxing_qr::SelfLocResp &msg){
+	if(flag_subselfLoc==0)
+		return;
+	result_selfLoc=msg.RET;
+};
+bool StateWait_AutoPatr::onInit() {
+	ROS_INFO("___________________________now Robot is  Wait_AutoPatr");
+	return 1;
+}
+;
+void StateWait_AutoPatr::stateHandle(EstablishMapEvent& state_,
+		RobotStatus& robot_status_) {
+	if (state_.report_ != 0)
+		return;
+	establishmap::autopatrol_service srv_;
+	srv_.request.angle_from = state_.next_route->angle_from;
+	srv_.request.angle_to = state_.next_route->angle_to;
+	srv_.request.id_from = state_.next_route->id_from;
+	srv_.request.id_to = state_.next_route->id_to;
+	srv_.request.ap_cmd=state_.next_route->flag_cover;
+	ROS_INFO("________________call for SRV AutoPatr ,and wait now___________");
+	if (client_autoPatr.call(srv_)) {
+		if (srv_.response.ap_result == 1){
+			state_.next_state = EstablishMapEvent::logmap;
+			ROS_INFO("________________call SRV AutoPatr successfully___________");
+		}
+		else {
+			state_.next_state = EstablishMapEvent::ready;
+			state_.report_ = 2;
+			ROS_INFO("________________call SRV AutoPatr fail___________");
+		}
+		state_.flag_eventFinish = 1;
+	}
+
+}
+;
+bool StateLogMap::onInit() {
+	ROS_INFO("___________________________now Robot is  LogMap");
+	return 1;
+}
+;
+void StateLogMap::stateHandle(EstablishMapEvent& state_,
+		RobotStatus& robot_status_) {
+	if (state_.report_ != 0)
+		return;
+	ZxingDecoder qr_scan;
+	float qr_angle;
+///loop to make sure that QR
+	int qr_counts=3;
+	string qr_id;
+
+    //Hellen add 0914
+	cv::Mat tmpimg;	
+	qr_img->copyTo(tmpimg);
+	
+    qr_id=qr_scan.decode(tmpimg,qr_angle);		 	
+	while(qr_id.empty())
+	{
+        //Hellen add 0912
+	    time_t now_time;
+    
+	    now_time=time(NULL);
+	    string ss=ctime(&now_time);
+    	cv::imwrite(ss+".png",tmpimg);
+        cv::namedWindow("tmpImage", CV_WINDOW_AUTOSIZE);
+        cv::imshow("tmpImage", tmpimg);
+ 	    cv::waitKey(10);
+	    std::cout<<"StateLogMap Save a tmpImage, file name =  "<<ss<<".png"<<",  qr_counts = "<<qr_counts<<std::endl;		
+		
+		qr_counts--;
+		sleep(1);
+		if(qr_counts==0){
+		    state_.next_state = EstablishMapEvent::ready;			//HELLEN add 0914
+			state_.report_ = 4;
+			ROS_INFO("________________qr_scan fail___________");
+			state_.flag_eventFinish=1;
+			
+			return;   	//HELLEN add 0914
+		}        		
+		
+		//HELLEN add 0914
+//		qr_img->copyTo(tmpimg);
+		tmpimg = cv::imread(ss+".png");
+
+        qr_id=qr_scan.decode(tmpimg,qr_angle);		  	
+	    std::cout<<"Now I decode a image from the image file. file name =  "<<ss<<".png"<<std::endl;		
+	}	///loop to make sure that QR
+
+    std::cout<<"1111111111111111  qr_id="<<qr_id<<",  qr_angle="<<qr_angle<<std::endl;
+   
+	std::vector<std::vector<cv::Point> > connect_domain = contoursDetect(tmpimg);
+	contoursDetect(tmpimg);
+
+	std::vector<float> a_;
+        ROS_INFO("QR angle is:  %f___________________________",qr_angle);
+	for (int i = 0; i < connect_domain.size(); i++) {
+		float angle_;
+		calcRouteAngle(connect_domain[i],robot_status_,angle_,tmpimg.cols,tmpimg.rows);
+		angle_=angle_-qr_angle;
+		ROS_INFO("The angle Path %d relative to QR  is %f___________________________",i,angle_);
+		a_.push_back(angle_);
+
+	}
+    //std::cout<<"1111111111"<<std::endl;
+	int qr_id_int=atoi(qr_id.c_str());
+	//char tempchar[10];
+	//sprintf(tempchar,"%d",qr_id);
+   	m_->qrcoordiate(qr_id,robot_status_.m_PtRobot.x,robot_status_.m_PtRobot.y,a_.size());
+    //std::cout<<"222222222222"<<std::endl;
+	m_->addqr(qr_id,robot_status_.l_encoder,robot_status_.r_encoder,last_angle,a_);
+    //std::cout<<"33333333333  qr_id_int="<<qr_id_int<<"  qr_id"<<qr_id<<std::endl;
+
+	path route_ = BFS(qr_id);
+	 std::cout<<"4444444444"<<std::endl;
+	std::cout<<"5555555555555 route_.ag= "<<route_.ag<<std::endl;
+	std::cout<<"555555 route_.p= "<<route_.p<<std::endl;
+	std::cout<<"555555 route_.re= "<<route_.re<<std::endl;
+	std::cout<<"555555 route_.q= "<<route_.q<<std::endl;
+	std::cout<<"555555 route_.length= "<<route_.length<<std::endl;
+	std::cout<<"555555 route_.lineid= "<<route_.lineid<<std::endl;
+
+        std::cout<<"4444444444"<<std::endl;
+	state_.next_route->angle_to = route_.ag;
+        //std::cout<<"9999999999999999999 route_.ag= "<<route_.ag<<std::endl;
+
+	state_.next_route->id_from = route_.p;
+	state_.next_route->id_to = route_.q;
+	state_.next_route->flag_cover= route_.re;
+        std::cout<<"6666666666666 state_.next_route->id_from= "<<state_.next_route->id_from<<"state_.next_route->id_to =  "<<state_.next_route->id_to<<std::endl;
+
+	last_angle = state_.next_route->angle_to;
+
+        std::cout<<"7777777777777 last_angle= "<<last_angle<<std::endl;
+	if (state_.next_route->id_from == state_.next_route->id_to) {
+		state_.next_state = EstablishMapEvent::ready;
+		state_.map_state = 1;
+		state_.flag_eventFinish = 1;
+		state_.report_ = 3;
+                std::cout<<"88888888888 state_.next_state= "<<state_.next_state<<std::endl;
+	} else {
+		state_.next_state = EstablishMapEvent::wait_ap;
+		state_.flag_eventFinish = 1;
+                std::cout<<"999999999999 state_.next_state= "<<state_.next_state<<std::endl;
+	}
+
+}
+;
+
+}
+

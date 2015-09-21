@@ -1,0 +1,21 @@
+#ifndef _USEFUL_H_     //如果没有定义这个宏
+#define _USEFUL_H_     //定义这个宏                        
+#include <iostream>
+#include <vector>
+#include <stack>
+#include <fstream>
+#include <iomanip>
+using namespace std;
+//定义结构保存文件中需要的数据
+struct path
+{
+	int p,q;      //记录节点号   
+	int lineid;         //保存路径号
+    float ag,length; //a保存两个节点的角度,len保存节点间的距离        
+};
+
+const int maxnum = 100;
+void Dijkstra(int , int , float *, int *, float c[maxnum][maxnum]);
+vector<path> searchPath(int *,int , int );
+vector<path> rtpath(int ,int );
+#endif

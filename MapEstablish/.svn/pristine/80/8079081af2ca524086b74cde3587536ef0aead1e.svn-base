@@ -1,0 +1,4 @@
+int32 SELFLOCREQ
+---
+int32 ID
+int32 angle
