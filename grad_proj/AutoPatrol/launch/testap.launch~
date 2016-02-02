@@ -1,0 +1,22 @@
+<launch>
+
+	<node pkg="AutoPatrol" type="testAP" name="testAP" args="" output="screen" launch-prefix="/usr/bin/xterm -e">
+		<rosparam file="$(find AutoPatrol)/launch/test.yaml" command="load"/> 
+  	</node>
+
+	
+</launch>
+
+
+<!-- 用于暂存调整
+
+<node pkg="AutoPatrol" type="AutoPatrol_main" name="AP" args="" output="screen" >
+  	</node>
+
+
+
+
+
+
+
+-->

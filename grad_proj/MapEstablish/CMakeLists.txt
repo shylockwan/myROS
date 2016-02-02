@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(MapEstablish)
-set(libpath /home/shylockwang/workspace/MyProject/devel/lib )
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -11,9 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   tf
-  ecl_exceptions 
-  ecl_threads 
-  ecl_time
+  ecl_exceptions ecl_threads ecl_time
 )
 
 ## System dependencies are found with CMake's conventions
@@ -121,29 +119,13 @@ catkin_package(
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
-  include/MapEstablish
 )
 
 ## Declare a C++ library
 # add_library(MapEstablish
 #   src/${PROJECT_NAME}/MapEstablish.cpp
 # )
-add_library(establishmap  src/MapEstablish.cpp )
-target_link_libraries(establishmap ${libpath}/libcolorThresh.so )
-target_link_libraries(establishmap ${libpath}/libframeTrans.so )
-target_link_libraries(establishmap ${libpath}/libccmap.so )
-target_link_libraries(establishmap ${libpath}/libywpath.so )
 
-add_library(establishmap_ros  src/MapEstablish_ros.cpp )
-target_link_libraries(establishmap_ros ${libpath}/libestablishmap.so )
-target_link_libraries(establishmap_ros ${catkin_LIBRARIES} )
-
-add_executable(establishmap_main  src/MapEstablish_main.cpp )
-target_link_libraries(establishmap_main ${libpath}/libestablishmap_ros.so )
-target_link_libraries(establishmap_main ${catkin_LIBRARIES} )
-
-add_executable(testmap  src/testMap.cpp )
-target_link_libraries(testmap ${catkin_LIBRARIES} )
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure

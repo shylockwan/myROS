@@ -1,0 +1,22 @@
+<launch>
+
+	<node pkg="MapEstablish" type="testmap" name="testMap" args="" output="screen" >
+		<rosparam file="$(find MapEstablish)/launch/test.yaml" command="load"/> 
+  	</node>
+
+	
+</launch>
+
+
+<!-- 用于暂存调整
+launch-prefix="/usr/bin/xterm -e"
+<node pkg="AutoPatrol" type="AutoPatrol_main" name="AP" args="" output="screen" >
+  	</node>
+
+
+
+
+
+
+
+-->

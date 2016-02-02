@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>MapEstablish</name>
+  <name>libpkg</name>
   <version>0.0.0</version>
-  <description>The MapEstablish package</description>
+  <description>The libpkg package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
@@ -13,13 +13,13 @@
   <!-- One license tag required, multiple allowed, one license per tag -->
   <!-- Commonly used license strings: -->
   <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
-  <license>BSD</license>
+  <license>TODO</license>
 
 
   <!-- Url tags are optional, but mutiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
-  <!-- <url type="website">http://wiki.ros.org/MapEstablish</url> -->
+  <!-- <url type="website">http://wiki.ros.org/libpkg</url> -->
 
 
   <!-- Author tags are optional, mutiple are allowed, one per tag -->
@@ -39,31 +39,16 @@
   <!--   <run_depend>message_runtime</run_depend> -->
   <!-- Use test_depend for packages you need only for testing: -->
   <!--   <test_depend>gtest</test_depend> -->
-  
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>cv_bridge</build_depend>
-  <build_depend>image_transport</build_depend>
   <build_depend>roscpp</build_depend>
-  <build_depend>sensor_msgs</build_depend>
   <build_depend>std_msgs</build_depend>
-  <build_depend>tf</build_depend>
-   <build_depend>ecl_exceptions</build_depend>
-  <build_depend>ecl_threads</build_depend>
-  <build_depend>ecl_time</build_depend>
-  
   <run_depend>cv_bridge</run_depend>
-  <run_depend>image_transport</run_depend>
   <run_depend>roscpp</run_depend>
-  <run_depend>sensor_msgs</run_depend>
   <run_depend>std_msgs</run_depend>
-  <run_depend>tf</run_depend>
- <run_depend>ecl_exceptions</run_depend>
-  <run_depend>ecl_threads</run_depend>
-  <run_depend>ecl_time</run_depend>
-  
-<build_depend>message_generation</build_depend>
-  <run_depend>message_runtime</run_depend>
 
+  <build_depend>message_generation</build_depend>
+  <run_depend>message_runtime</run_depend>
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <!-- Other tools can request additional information be placed here -->
